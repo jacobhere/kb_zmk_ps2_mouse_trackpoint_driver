@@ -550,8 +550,8 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
         buttons_released++;
     }
 
-    // bool button_m_released = false;
-    // bool button_m_pressed = false;
+    bool button_m_released = false;
+    bool button_m_pressed = false;
     // if (button_m == true && data->button_m_is_held == false) {
     //     LOG_INF("Pressing button_m");
 
