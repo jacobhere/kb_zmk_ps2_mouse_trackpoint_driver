@@ -668,16 +668,12 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
 
             buttons_need_reporting--;
 
-            // Middle Button
+            // Middle Button - only track state for scroll mode, don't send click events
             if (button_m_pressed) {
-
-                input_report_key(data->dev, INPUT_BTN_2, 1,
-                                 buttons_need_reporting == 1 ? true : false, K_FOREVER);
+                // Don't send click event, just track the state for scroll mode
                 data->button_m_is_held = true;
             } else if (button_m_released) {
-
-                input_report_key(data->dev, INPUT_BTN_2, 0,
-                                 buttons_need_reporting == 1 ? true : false, K_FOREVER);
+                // Don't send click event, just track the state for scroll mode
                 data->button_m_is_held = false;
             }
         }
