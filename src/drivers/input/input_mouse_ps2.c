@@ -516,11 +516,32 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
     bool have_x = zmk_mouse_ps2_is_non_zero_1d_movement(mov_x);
     bool have_y = zmk_mouse_ps2_is_non_zero_1d_movement(mov_y);
 
+    // If middle button is held, convert Y movement to scroll and ignore X movement
+    if (data->button_m_is_held && have_y ) {
+        // Convert Y movement to scroll (negative Y = scroll up, positive Y = scroll down)
+        int8_t scroll_amount = -(mov_y); // Invert Y direction for natural scroll
+        zmk_mouse_ps2_activity_scroll(scroll_amount);
+        return;
+    }
+
+    // Normal mouse movement when middle button is not held
     if (have_x) {
         ret = input_report_rel(data->dev, INPUT_REL_X, mov_x, !have_y, K_NO_WAIT);
     }
     if (have_y) {
         ret = input_report_rel(data->dev, INPUT_REL_Y, mov_y, true, K_NO_WAIT);
+    }
+}
+
+void zmk_mouse_ps2_activity_scroll(int8_t scroll_y) {
+    struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
+    int ret = 0;
+
+    if (scroll_y != 0) {
+        ret = input_report_rel(data->dev, INPUT_REL_WHEEL, scroll_y, true, K_NO_WAIT);
+        if (ret) {
+            LOG_ERR("Failed to report scroll: %d", ret);
+        }
     }
 }
 
@@ -552,17 +573,17 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
 
     bool button_m_released = false;
     bool button_m_pressed = false;
-    // if (button_m == true && data->button_m_is_held == false) {
-    //     LOG_INF("Pressing button_m");
+    if (button_m == true && data->button_m_is_held == false) {
+        LOG_INF("Pressing button_m");
 
-    //     button_m_pressed = true;
-    //     buttons_pressed++;
-    // } else if (button_m == false && data->button_m_is_held == true) {
-    //     LOG_INF("Releasing button_m");
+        button_m_pressed = true;
+        buttons_pressed++;
+    } else if (button_m == false && data->button_m_is_held == true) {
+        LOG_INF("Releasing button_m");
 
-    //     button_m_released = true;
-    //     buttons_released++;
-    // }
+        button_m_released = true;
+        buttons_released++;
+    }
 
     bool button_r_released = false;
     bool button_r_pressed = false;
