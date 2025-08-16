@@ -308,6 +308,7 @@ void zmk_mouse_ps2_activity_process_cmd(zmk_mouse_ps2_packet_mode packet_mode, u
 void zmk_mouse_ps2_activity_abort_cmd();
 void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y);
 void zmk_mouse_ps2_activity_scroll(int8_t scroll_y);
+void zmk_mouse_ps2_activity_scroll_horizontal(int8_t scroll_x);
 void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool button_r);
 void zmk_mouse_ps2_activity_reset_packet_buffer();
 struct zmk_mouse_ps2_packet
@@ -516,11 +517,20 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
     bool have_x = zmk_mouse_ps2_is_non_zero_1d_movement(mov_x);
     bool have_y = zmk_mouse_ps2_is_non_zero_1d_movement(mov_y);
 
-    // If middle button is held, convert Y movement to scroll and ignore X movement
-    if (data->button_m_is_held && have_y ) {
-        // Convert Y movement to scroll (negative Y = scroll up, positive Y = scroll down)
-        int8_t scroll_amount = -(mov_y); // Invert Y direction for natural scroll
-        zmk_mouse_ps2_activity_scroll(scroll_amount);
+    // If middle button is held, convert movement to scroll and ignore cursor movement
+    if (data->button_m_is_held) {
+        // Convert Y movement to vertical scroll (negative Y = scroll up, positive Y = scroll down)
+        if (have_y) {
+            int8_t scroll_y = -(mov_y); // Invert Y direction for natural scroll
+            zmk_mouse_ps2_activity_scroll(scroll_y);
+        }
+        
+        // Convert X movement to horizontal scroll (negative X = scroll left, positive X = scroll right)
+        if (have_x) {
+            int8_t scroll_x = -(mov_x); // Invert X direction for natural scroll
+            zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
+        }
+        
         return;
     }
 
@@ -541,6 +551,18 @@ void zmk_mouse_ps2_activity_scroll(int8_t scroll_y) {
         ret = input_report_rel(data->dev, INPUT_REL_WHEEL, scroll_y, true, K_NO_WAIT);
         if (ret) {
             LOG_ERR("Failed to report scroll: %d", ret);
+        }
+    }
+}
+
+void zmk_mouse_ps2_activity_scroll_horizontal(int8_t scroll_x) {
+    struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
+    int ret = 0;
+
+    if (scroll_x != 0) {
+        ret = input_report_rel(data->dev, INPUT_REL_HWHEEL, scroll_x, true, K_NO_WAIT);
+        if (ret) {
+            LOG_ERR("Failed to report horizontal scroll: %d", ret);
         }
     }
 }
