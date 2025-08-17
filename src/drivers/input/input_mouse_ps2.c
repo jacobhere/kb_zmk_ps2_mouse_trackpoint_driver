@@ -523,15 +523,43 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
     if (data->button_m_is_held) {
         const struct zmk_mouse_ps2_config *config = &zmk_mouse_ps2_config;
         
-        // Convert Y movement to vertical scroll (negative Y = scroll up, positive Y = scroll down)
+        // Convert Y movement to vertical scroll with acceleration
         if (have_y) {
-            int8_t scroll_y = -(mov_y / config->scroll_scale); // Invert Y direction for natural scroll and apply scaling
+            int8_t scroll_y = 0;
+            int16_t abs_y = abs(mov_y);
+            
+            // Apply acceleration curve for better sensitivity on small movements
+            if (abs_y <= 2) {
+                // Very small movements: minimum scroll of 1
+                scroll_y = (mov_y > 0) ? -1 : 1;
+            } else if (abs_y <= 5) {
+                // Small movements: enhanced sensitivity
+                scroll_y = -(mov_y * 2 / config->scroll_scale);
+            } else {
+                // Larger movements: normal scaling
+                scroll_y = -(mov_y / config->scroll_scale);
+            }
+            
             zmk_mouse_ps2_activity_scroll(scroll_y);
         }
         
-        // Convert X movement to horizontal scroll (negative X = scroll left, positive X = scroll right)
+        // Convert X movement to horizontal scroll with acceleration
         if (have_x) {
-            int8_t scroll_x = -(mov_x / config->scroll_scale); // Invert X direction for natural scroll and apply scaling
+            int8_t scroll_x = 0;
+            int16_t abs_x = abs(mov_x);
+            
+            // Apply acceleration curve for better sensitivity on small movements
+            if (abs_x <= 2) {
+                // Very small movements: minimum scroll of 1
+                scroll_x = (mov_x > 0) ? -1 : 1;
+            } else if (abs_x <= 5) {
+                // Small movements: enhanced sensitivity
+                scroll_x = -(mov_x * 2 / config->scroll_scale);
+            } else {
+                // Larger movements: normal scaling
+                scroll_x = -(mov_x / config->scroll_scale);
+            }
+            
             zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
         }
         
