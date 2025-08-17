@@ -442,6 +442,20 @@ You can adjust more settings in [mouse_tp.dtsi](https://github.com/infused-kim/k
 
 In `mouse_tp.dtsi`, you will find settings such as TP sensitivity, swapping of axes, etc. It's also where you configure automatic layer toggling on mouse movement.
 
+**Scroll Speed Configuration:**
+You can adjust the speed of middle-button scrolling by setting the `scroll-scale` property. Higher values make scrolling slower:
+- `scroll-scale = <1>` (default) - No scaling, normal scroll speed
+- `scroll-scale = <2>` - Scroll at half speed
+- `scroll-scale = <4>` - Scroll at quarter speed
+- `scroll-scale = <8>` - Scroll at eighth speed
+
+For example, to make scrolling slower, add this to your mouse configuration:
+```dts
+&mouse_ps2 {
+    scroll-scale = <4>;  // Makes scrolling 4x slower
+};
+```
+
 You won't need to adjust most of the settings in `your_keyboard.conf`, but one option that's worth mentioning is `CONFIG_ZMK_INPUT_MOUSE_PS2_ENABLE_UROB_COMPAT`.
 
 It is necessary if you want to use [urob's popular zmk fork](https://github.com/urob/zmk).

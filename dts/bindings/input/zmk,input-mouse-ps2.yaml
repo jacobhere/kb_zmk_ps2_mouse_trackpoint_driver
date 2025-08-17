@@ -30,6 +30,11 @@ properties:
     type: boolean
     description: Enables scroll wheel on mouse devices supporting the Intellimouse extension.
 
+  scroll-scale:
+    type: int
+    description: Scaling factor for middle-button scrolling. Higher values make scrolling slower. Default is 1 (no scaling).
+    default: 0.5
+
   disable-clicking:
     type: boolean
     description: Disables clicking. Useful when using a PS2 driver that is prone to erros in transmissions to reduce accidental clicks.

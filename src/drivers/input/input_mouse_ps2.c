@@ -165,6 +165,7 @@ struct zmk_mouse_ps2_config {
     bool scroll_mode;
     bool disable_clicking;
     int sampling_rate;
+    int scroll_scale;
 
     bool tp_press_to_select;
     int tp_press_to_select_threshold;
@@ -236,6 +237,7 @@ static const struct zmk_mouse_ps2_config zmk_mouse_ps2_config = {
     .scroll_mode = DT_INST_PROP_OR(0, scroll_mode, false),
     .disable_clicking = DT_INST_PROP_OR(0, disable_clicking, false),
     .sampling_rate = DT_INST_PROP_OR(0, sampling_rate, MOUSE_PS2_CMD_SET_SAMPLING_RATE_DEFAULT),
+    .scroll_scale = DT_INST_PROP_OR(0, scroll_scale, 1),
     .tp_press_to_select = DT_INST_PROP_OR(0, tp_press_to_select, false),
     .tp_press_to_select_threshold = DT_INST_PROP_OR(0, tp_press_to_select_threshold, -1),
     .tp_sensitivity = DT_INST_PROP_OR(0, tp_sensitivity, -1),
@@ -519,15 +521,17 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
 
     // If middle button is held, convert movement to scroll and ignore cursor movement
     if (data->button_m_is_held) {
+        const struct zmk_mouse_ps2_config *config = &zmk_mouse_ps2_config;
+        
         // Convert Y movement to vertical scroll (negative Y = scroll up, positive Y = scroll down)
         if (have_y) {
-            int8_t scroll_y = -(mov_y); // Invert Y direction for natural scroll
+            int8_t scroll_y = -(mov_y / config->scroll_scale); // Invert Y direction for natural scroll and apply scaling
             zmk_mouse_ps2_activity_scroll(scroll_y);
         }
         
         // Convert X movement to horizontal scroll (negative X = scroll left, positive X = scroll right)
         if (have_x) {
-            int8_t scroll_x = -(mov_x); // Invert X direction for natural scroll
+            int8_t scroll_x = -(mov_x / config->scroll_scale); // Invert X direction for natural scroll and apply scaling
             zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
         }
         
