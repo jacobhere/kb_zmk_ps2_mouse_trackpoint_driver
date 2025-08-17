@@ -33,7 +33,7 @@ properties:
   scroll-scale:
     type: int
     description: Scaling factor for middle-button scrolling. Higher values make scrolling slower. Default is 1 (no scaling).
-    default: 0.5
+    default: 2
 
   disable-clicking:
     type: boolean
