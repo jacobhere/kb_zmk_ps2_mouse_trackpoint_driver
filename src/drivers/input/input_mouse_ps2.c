@@ -546,14 +546,14 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
                 data->scroll_accumulator_y += mov_y;
                 
                 // Only send scroll when accumulated movement reaches threshold
-                if (abs(data->scroll_accumulator_y) >= 8) {
+                if (abs(data->scroll_accumulator_y) >= 12) { // Increased threshold for slower scrolling
                     int8_t scroll_y = (data->scroll_accumulator_y > 0) ? -1 : 1;
                     zmk_mouse_ps2_activity_scroll(scroll_y);
                     data->scroll_accumulator_y = 0; // Reset accumulator
                 }
             } else {
-                // For larger movements, send scroll immediately
-                int8_t scroll_y = -(mov_y / (config->scroll_scale * 4));
+                // For larger movements, send scroll immediately with reduced speed
+                int8_t scroll_y = -(mov_y / (config->scroll_scale * 8)); // Doubled divisor for slower scrolling
                 zmk_mouse_ps2_activity_scroll(scroll_y);
                 data->scroll_accumulator_y = 0; // Reset accumulator
             }
@@ -569,14 +569,14 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
                 data->scroll_accumulator_x += mov_x;
                 
                 // Only send scroll when accumulated movement reaches threshold
-                if (abs(data->scroll_accumulator_x) >= 8) {
+                if (abs(data->scroll_accumulator_x) >= 12) { // Increased threshold for slower scrolling
                     int8_t scroll_x = (data->scroll_accumulator_x > 0) ? -1 : 1;
                     zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
                     data->scroll_accumulator_x = 0; // Reset accumulator
                 }
             } else {
-                // For larger movements, send scroll immediately
-                int8_t scroll_x = -(mov_x / (config->scroll_scale * 4));
+                // For larger movements, send scroll immediately with reduced speed
+                int8_t scroll_x = -(mov_x / (config->scroll_scale * 8)); // Doubled divisor for slower scrolling
                 zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
                 data->scroll_accumulator_x = 0; // Reset accumulator
             }
