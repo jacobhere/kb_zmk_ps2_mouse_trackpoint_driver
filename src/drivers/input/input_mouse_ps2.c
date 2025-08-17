@@ -221,8 +221,6 @@ struct zmk_mouse_ps2_data {
     int32_t scroll_accumulator_x;
     int32_t scroll_accumulator_y;
     int32_t scroll_threshold;
-    
-
 };
 
 static const struct zmk_mouse_ps2_config zmk_mouse_ps2_config = {
@@ -294,8 +292,6 @@ static struct zmk_mouse_ps2_data zmk_mouse_ps2_data = {
     .scroll_accumulator_x = 0,
     .scroll_accumulator_y = 0,
     .scroll_threshold = 8,
-    
-
 };
 
 static int allowed_sampling_rates[] = {
@@ -464,11 +460,8 @@ void zmk_mouse_ps2_activity_process_cmd(zmk_mouse_ps2_packet_mode packet_mode, u
     }
 #endif
 
-    // Always process button events first, regardless of movement
-    zmk_mouse_ps2_activity_click_buttons(packet.button_l, packet.button_m, packet.button_r);
-    
-    // Then process movement if any
     zmk_mouse_ps2_activity_move_mouse(packet.mov_x, packet.mov_y);
+    zmk_mouse_ps2_activity_click_buttons(packet.button_l, packet.button_m, packet.button_r);
 
     data->prev_packet = packet;
 }
@@ -625,8 +618,6 @@ void zmk_mouse_ps2_activity_scroll_horizontal(int8_t scroll_x) {
 void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool button_r) {
     struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
     const struct zmk_mouse_ps2_config *config = &zmk_mouse_ps2_config;
-    
-
 
     // TODO: Integrate this with the proper button mask instead
     // of hardcoding the mouse button indeces.
@@ -638,9 +629,6 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
     // First we check which mouse button press states have changed
     bool button_l_pressed = false;
     bool button_l_released = false;
-    
-
-    
     if (button_l == true && data->button_l_is_held == false) {
         LOG_INF("Pressed button_l");
 
@@ -669,9 +657,6 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
 
     bool button_r_released = false;
     bool button_r_pressed = false;
-    
-
-    
     if (button_r == true && data->button_r_is_held == false) {
         LOG_INF("Pressing button_r");
 
@@ -694,67 +679,61 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
         zmk_mouse_ps2_activity_abort_cmd("Multiple button presses");
         return;
     }
-    
-    // Always process button events, even if no changes detected
-    // This ensures button states are properly tracked
-    if (buttons_pressed == 0 && buttons_released == 0) {
-        // No state changes, but still update the internal state tracking
-        data->button_l_is_held = button_l;
-        data->button_r_is_held = button_r;
-        data->button_m_is_held = button_m;
-    }
-    
-
 
     if (config->disable_clicking != true) {
-        // If it wasn't, we actually send the events.
-        if (buttons_pressed > 0 || buttons_released > 0) {
+        // Always process button events, even if no state changes
+        int buttons_need_reporting = buttons_pressed + buttons_released;
+        if (buttons_need_reporting == 0) {
+            buttons_need_reporting = 1; // Ensure at least one event is sent
+        }
 
-            int buttons_need_reporting = buttons_pressed + buttons_released;
+        // Left button
+        if (button_l_pressed) {
+            input_report_key(data->dev, INPUT_BTN_0, 1,
+                             buttons_need_reporting == 1 ? true : false, K_FOREVER);
+            data->button_l_is_held = true;
+        } else if (button_l_released) {
+            input_report_key(data->dev, INPUT_BTN_0, 0,
+                             buttons_need_reporting == 1 ? true : false, K_FOREVER);
+            data->button_l_is_held = false;
+        } else if (button_l) {
+            // Maintain pressed state
+            input_report_key(data->dev, INPUT_BTN_0, 1, false, K_FOREVER);
+        } else {
+            // Maintain released state
+            input_report_key(data->dev, INPUT_BTN_0, 0, false, K_FOREVER);
+        }
 
-            // Left button
-            if (button_l_pressed) {
+        buttons_need_reporting--;
 
-                input_report_key(data->dev, INPUT_BTN_0, 1,
-                                 buttons_need_reporting == 1 ? true : false, K_FOREVER);
-                data->button_l_is_held = true;
-                
-            } else if (button_l_released) {
+        // Right button
+        if (button_r_pressed) {
+            input_report_key(data->dev, INPUT_BTN_1, 1,
+                             buttons_need_reporting == 1 ? true : false, K_FOREVER);
+            data->button_r_is_held = true;
+        } else if (button_r_released) {
+            input_report_key(data->dev, INPUT_BTN_1, 0,
+                             buttons_need_reporting == 1 ? true : false, K_FOREVER);
+            data->button_r_is_held = false;
+        } else if (button_r) {
+            // Maintain pressed state
+            input_report_key(data->dev, INPUT_BTN_1, 1, false, K_FOREVER);
+        } else {
+            // Maintain released state
+            input_report_key(data->dev, INPUT_BTN_1, 0, false, K_FOREVER);
+        }
 
-                input_report_key(data->dev, INPUT_BTN_0, 0,
-                                 buttons_need_reporting == 1 ? true : false, K_FOREVER);
-                data->button_l_is_held = false;
-            }
+        buttons_need_reporting--;
 
-            buttons_need_reporting--;
-
-            // Right button
-            if (button_r_pressed) {
-
-                input_report_key(data->dev, INPUT_BTN_1, 1,
-                                 buttons_need_reporting == 1 ? true : false, K_FOREVER);
-                data->button_r_is_held = true;
-            } else if (button_r_released) {
-
-                input_report_key(data->dev, INPUT_BTN_1, 0,
-                                 buttons_need_reporting == 1 ? true : false, K_FOREVER);
-                data->button_r_is_held = false;
-            }
-
-            buttons_need_reporting--;
-
-            // Middle Button
-            if (button_m_pressed) {
-
-                // input_report_key(data->dev, INPUT_BTN_2, 1,
-                //                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
-                data->button_m_is_held = true;
-            } else if (button_m_released) {
-
-                // input_report_key(data->dev, INPUT_BTN_2, 0,
-                //                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
-                data->button_m_is_held = false;
-            }
+        // Middle Button
+        if (button_m_pressed) {
+            // input_report_key(data->dev, INPUT_BTN_2, 1,
+            //                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
+            data->button_m_is_held = true;
+        } else if (button_m_released) {
+            // input_report_key(data->dev, INPUT_BTN_2, 0,
+            //                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
+            data->button_m_is_held = false;
         }
     }
 }
@@ -1852,8 +1831,6 @@ static void zmk_mouse_ps2_init_thread(int dev_ptr, int unused) {
     }
 
     k_work_init_delayable(&data->packet_buffer_timeout, zmk_mouse_ps2_activity_packet_timout);
-    
-
 
     return;
 }
@@ -1969,8 +1946,6 @@ int zmk_mouse_ps2_init_wait_for_mouse(const struct device *dev) {
 
     return 1;
 }
-
-
 
 // Depends on the UART and PS2 init priorities, which are 55 and 45 by default
 #define ZMK_MOUSE_PS2_INIT_PRIORITY 90
