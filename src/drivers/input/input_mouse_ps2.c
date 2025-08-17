@@ -18,6 +18,9 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/util.h>
 
+#include <zmk/mouse/hid.h>
+#include <zmk/endpoints.h>
+
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 /*
@@ -583,35 +586,26 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
     }
 
     // Normal mouse movement when middle button is not held
-    if (have_x) {
-        ret = input_report_rel(data->dev, INPUT_REL_X, mov_x, !have_y, K_NO_WAIT);
-    }
-    if (have_y) {
-        ret = input_report_rel(data->dev, INPUT_REL_Y, mov_y, true, K_NO_WAIT);
+    if (have_x || have_y) {
+        zmk_hid_mouse_movement_set(mov_x, mov_y);
+        zmk_endpoints_send_mouse_report();
+        zmk_hid_mouse_movement_set(0, 0); // Reset movement
     }
 }
 
 void zmk_mouse_ps2_activity_scroll(int8_t scroll_y) {
-    struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
-    int ret = 0;
-
     if (scroll_y != 0) {
-        ret = input_report_rel(data->dev, INPUT_REL_WHEEL, scroll_y, true, K_NO_WAIT);
-        if (ret) {
-            LOG_ERR("Failed to report scroll: %d", ret);
-        }
+        zmk_hid_mouse_scroll_set(0, scroll_y);
+        zmk_endpoints_send_mouse_report();
+        zmk_hid_mouse_scroll_set(0, 0); // Reset scroll
     }
 }
 
 void zmk_mouse_ps2_activity_scroll_horizontal(int8_t scroll_x) {
-    struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
-    int ret = 0;
-
     if (scroll_x != 0) {
-        ret = input_report_rel(data->dev, INPUT_REL_HWHEEL, scroll_x, true, K_NO_WAIT);
-        if (ret) {
-            LOG_ERR("Failed to report horizontal scroll: %d", ret);
-        }
+        zmk_hid_mouse_scroll_set(scroll_x, 0);
+        zmk_endpoints_send_mouse_report();
+        zmk_hid_mouse_scroll_set(0, 0); // Reset scroll
     }
 }
 
@@ -681,59 +675,40 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
     }
 
     if (config->disable_clicking != true) {
-        // Always process button events, even if no state changes
-        int buttons_need_reporting = buttons_pressed + buttons_released;
-        if (buttons_need_reporting == 0) {
-            buttons_need_reporting = 1; // Ensure at least one event is sent
-        }
+        // If it wasn't, we actually send the events.
+        if (buttons_pressed > 0 || buttons_released > 0) {
 
-        // Left button
-        if (button_l_pressed) {
-            input_report_key(data->dev, INPUT_BTN_0, 1,
-                             buttons_need_reporting == 1 ? true : false, K_FOREVER);
-            data->button_l_is_held = true;
-        } else if (button_l_released) {
-            input_report_key(data->dev, INPUT_BTN_0, 0,
-                             buttons_need_reporting == 1 ? true : false, K_FOREVER);
-            data->button_l_is_held = false;
-        } else if (button_l) {
-            // Maintain pressed state
-            input_report_key(data->dev, INPUT_BTN_0, 1, false, K_FOREVER);
-        } else {
-            // Maintain released state
-            input_report_key(data->dev, INPUT_BTN_0, 0, false, K_FOREVER);
-        }
+            int buttons_need_reporting = buttons_pressed + buttons_released;
 
-        buttons_need_reporting--;
+            // Left button
+            if (button_l_pressed) {
+                zmk_hid_mouse_button_press(0); // Left button
+                data->button_l_is_held = true;
+            } else if (button_l_released) {
+                zmk_hid_mouse_button_release(0); // Left button
+                data->button_l_is_held = false;
+            }
 
-        // Right button
-        if (button_r_pressed) {
-            input_report_key(data->dev, INPUT_BTN_1, 1,
-                             buttons_need_reporting == 1 ? true : false, K_FOREVER);
-            data->button_r_is_held = true;
-        } else if (button_r_released) {
-            input_report_key(data->dev, INPUT_BTN_1, 0,
-                             buttons_need_reporting == 1 ? true : false, K_FOREVER);
-            data->button_r_is_held = false;
-        } else if (button_r) {
-            // Maintain pressed state
-            input_report_key(data->dev, INPUT_BTN_1, 1, false, K_FOREVER);
-        } else {
-            // Maintain released state
-            input_report_key(data->dev, INPUT_BTN_1, 0, false, K_FOREVER);
-        }
+            // Right button
+            if (button_r_pressed) {
+                zmk_hid_mouse_button_press(1); // Right button
+                data->button_r_is_held = true;
+            } else if (button_r_released) {
+                zmk_hid_mouse_button_release(1); // Right button
+                data->button_r_is_held = false;
+            }
 
-        buttons_need_reporting--;
+            // Middle Button
+            if (button_m_pressed) {
+                // zmk_hid_mouse_button_press(2); // Middle button - uncomment if needed
+                data->button_m_is_held = true;
+            } else if (button_m_released) {
+                // zmk_hid_mouse_button_release(2); // Middle button - uncomment if needed
+                data->button_m_is_held = false;
+            }
 
-        // Middle Button
-        if (button_m_pressed) {
-            // input_report_key(data->dev, INPUT_BTN_2, 1,
-            //                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
-            data->button_m_is_held = true;
-        } else if (button_m_released) {
-            // input_report_key(data->dev, INPUT_BTN_2, 0,
-            //                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
-            data->button_m_is_held = false;
+            // Send the mouse report to all endpoints
+            zmk_endpoints_send_mouse_report();
         }
     }
 }
