@@ -1349,7 +1349,7 @@ int zmk_mouse_ps2_tp_value6_upper_plateau_speed_set(int value6) {
         return 1;
     }
 
-    uint8_t arg = value6;
+    uint8_t arg = 200;
 
     struct zmk_mouse_ps2_send_cmd_resp resp =
         zmk_mouse_ps2_send_cmd(MOUSE_PS2_CMD_TP_SET_VALUE6_UPPER_PLATEAU_SPEED,
