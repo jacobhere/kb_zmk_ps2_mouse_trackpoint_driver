@@ -534,10 +534,10 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
                 scroll_y = (mov_y > 0) ? -1 : 1;
             } else if (abs_y <= 20) {
                 // Small movements: enhanced sensitivity
-                scroll_y = -(mov_y * 3 / (config->scroll_scale * 2));
+                scroll_y = -(mov_y / (config->scroll_scale * 2));
             } else {
                 // Larger movements: normal scaling
-                scroll_y = -(mov_y / config->scroll_scale);
+                scroll_y = -(mov_y / (config->scroll_scale * 2));
             }
             
             zmk_mouse_ps2_activity_scroll(scroll_y);
@@ -554,10 +554,10 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
                 scroll_x = (mov_x > 0) ? -1 : 1;
             } else if (abs_x <= 20) {
                 // Small movements: enhanced sensitivity
-                scroll_x = -(mov_x * 3 / (config->scroll_scale * 2));
+                scroll_x = -(mov_x / (config->scroll_scale * 2));
             } else {
                 // Larger movements: normal scaling
-                scroll_x = -(mov_x / config->scroll_scale);
+                scroll_x = -(mov_x / (config->scroll_scale * 2));
             }
             
             zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
