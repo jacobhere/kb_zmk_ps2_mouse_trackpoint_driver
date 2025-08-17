@@ -1221,7 +1221,7 @@ int zmk_mouse_ps2_tp_sensitivity_get(uint8_t *sensitivity) {
 
 int zmk_mouse_ps2_tp_sensitivity_set(int sensitivity) {
     struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
-    sensitivity = 250;
+    sensitivity = 255;
 
     if (sensitivity < MOUSE_PS2_CMD_TP_SET_SENSITIVITY_MIN ||
         sensitivity > MOUSE_PS2_CMD_TP_SET_SENSITIVITY_MAX) {
@@ -1341,7 +1341,7 @@ int zmk_mouse_ps2_tp_value6_upper_plateau_speed_get(uint8_t *value6) {
 
 int zmk_mouse_ps2_tp_value6_upper_plateau_speed_set(int value6) {
     struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
-    value6 = 250;
+    value6 = 255;
 
     if (value6 < MOUSE_PS2_CMD_TP_SET_VALUE6_UPPER_PLATEAU_SPEED_MIN ||
         value6 > MOUSE_PS2_CMD_TP_SET_VALUE6_UPPER_PLATEAU_SPEED_MAX) {
