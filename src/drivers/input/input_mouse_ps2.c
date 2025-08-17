@@ -675,13 +675,13 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
             // Middle Button
             if (button_m_pressed) {
 
-                input_report_key(data->dev, INPUT_BTN_2, 1,
-                                 buttons_need_reporting == 1 ? true : false, K_FOREVER);
+                // input_report_key(data->dev, INPUT_BTN_2, 1,
+                //                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
                 data->button_m_is_held = true;
             } else if (button_m_released) {
 
-                input_report_key(data->dev, INPUT_BTN_2, 0,
-                                 buttons_need_reporting == 1 ? true : false, K_FOREVER);
+                // input_report_key(data->dev, INPUT_BTN_2, 0,
+                //                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
                 data->button_m_is_held = false;
             }
         }
