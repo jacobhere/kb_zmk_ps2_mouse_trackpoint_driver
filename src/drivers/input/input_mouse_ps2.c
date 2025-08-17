@@ -590,9 +590,9 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
         // Apply software acceleration for faster movement
         int16_t accelerated_x = mov_x;
         if (abs(mov_x) > 5) {
-            accelerated_x = mov_x * 2; // 2x acceleration for larger movements
+            accelerated_x = mov_x * 2.5; // 2x acceleration for larger movements
         } else if (abs(mov_x) > 2) {
-            accelerated_x = mov_x * 3 / 2; // 1.5x acceleration for medium movements
+            accelerated_x = mov_x * 2; // 1.5x acceleration for medium movements
         }
         ret = input_report_rel(data->dev, INPUT_REL_X, accelerated_x, !have_y, K_NO_WAIT);
     }
@@ -600,9 +600,9 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
         // Apply software acceleration for faster movement
         int16_t accelerated_y = mov_y;
         if (abs(mov_y) > 5) {
-            accelerated_y = mov_y * 2; // 2x acceleration for larger movements
+            accelerated_y = mov_y * 2.5; // 2x acceleration for larger movements
         } else if (abs(mov_y) > 2) {
-            accelerated_y = mov_y * 3 / 2; // 1.5x acceleration for medium movements
+            accelerated_y = mov_y * 2; // 1.5x acceleration for medium movements
         }
         ret = input_report_rel(data->dev, INPUT_REL_Y, accelerated_y, true, K_NO_WAIT);
     }
