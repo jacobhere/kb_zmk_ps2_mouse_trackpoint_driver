@@ -221,6 +221,8 @@ struct zmk_mouse_ps2_data {
     int32_t scroll_accumulator_x;
     int32_t scroll_accumulator_y;
     int32_t scroll_threshold;
+    
+
 };
 
 static const struct zmk_mouse_ps2_config zmk_mouse_ps2_config = {
@@ -292,6 +294,8 @@ static struct zmk_mouse_ps2_data zmk_mouse_ps2_data = {
     .scroll_accumulator_x = 0,
     .scroll_accumulator_y = 0,
     .scroll_threshold = 8,
+    
+
 };
 
 static int allowed_sampling_rates[] = {
@@ -460,17 +464,11 @@ void zmk_mouse_ps2_activity_process_cmd(zmk_mouse_ps2_packet_mode packet_mode, u
     }
 #endif
 
-    // Always process button events, even when there's no movement
+    // Always process button events first, regardless of movement
     zmk_mouse_ps2_activity_click_buttons(packet.button_l, packet.button_m, packet.button_r);
     
-    // Process movement if any (but ensure button events are processed first)
-    if (packet.mov_x != 0 || packet.mov_y != 0) {
-        zmk_mouse_ps2_activity_move_mouse(packet.mov_x, packet.mov_y);
-    }
-    
-    // Force button state update even if no movement (for debugging)
-    LOG_DBG("Packet processed - buttons: L:%d M:%d R:%d, movement: X:%d Y:%d", 
-            packet.button_l, packet.button_m, packet.button_r, packet.mov_x, packet.mov_y);
+    // Then process movement if any
+    zmk_mouse_ps2_activity_move_mouse(packet.mov_x, packet.mov_y);
 
     data->prev_packet = packet;
 }
@@ -628,7 +626,7 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
     struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
     const struct zmk_mouse_ps2_config *config = &zmk_mouse_ps2_config;
     
-    LOG_DBG("Processing buttons - L:%d M:%d R:%d", button_l, button_m, button_r);
+
 
     // TODO: Integrate this with the proper button mask instead
     // of hardcoding the mouse button indeces.
@@ -641,7 +639,7 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
     bool button_l_pressed = false;
     bool button_l_released = false;
     
-    LOG_DBG("Button state check - button_l: %d, button_l_is_held: %d", button_l, data->button_l_is_held);
+
     
     if (button_l == true && data->button_l_is_held == false) {
         LOG_INF("Pressed button_l");
@@ -672,7 +670,7 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
     bool button_r_released = false;
     bool button_r_pressed = false;
     
-    LOG_DBG("Button state check - button_r: %d, button_r_is_held: %d", button_r, data->button_r_is_held);
+
     
     if (button_r == true && data->button_r_is_held == false) {
         LOG_INF("Pressing button_r");
@@ -697,7 +695,16 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
         return;
     }
     
-    LOG_DBG("Button changes detected - pressed: %d, released: %d", buttons_pressed, buttons_released);
+    // Always process button events, even if no changes detected
+    // This ensures button states are properly tracked
+    if (buttons_pressed == 0 && buttons_released == 0) {
+        // No state changes, but still update the internal state tracking
+        data->button_l_is_held = button_l;
+        data->button_r_is_held = button_r;
+        data->button_m_is_held = button_m;
+    }
+    
+
 
     if (config->disable_clicking != true) {
         // If it wasn't, we actually send the events.
@@ -1845,6 +1852,8 @@ static void zmk_mouse_ps2_init_thread(int dev_ptr, int unused) {
     }
 
     k_work_init_delayable(&data->packet_buffer_timeout, zmk_mouse_ps2_activity_packet_timout);
+    
+
 
     return;
 }
@@ -1960,6 +1969,8 @@ int zmk_mouse_ps2_init_wait_for_mouse(const struct device *dev) {
 
     return 1;
 }
+
+
 
 // Depends on the UART and PS2 init priorities, which are 55 and 45 by default
 #define ZMK_MOUSE_PS2_INIT_PRIORITY 90
