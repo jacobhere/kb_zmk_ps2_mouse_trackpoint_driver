@@ -529,12 +529,12 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
             int16_t abs_y = abs(mov_y);
             
             // Apply acceleration curve for better sensitivity on small movements
-            if (abs_y <= 2) {
+            if (abs_y <= 3) {
                 // Very small movements: minimum scroll of 1
                 scroll_y = (mov_y > 0) ? -1 : 1;
-            } else if (abs_y <= 5) {
+            } else if (abs_y <= 8) {
                 // Small movements: enhanced sensitivity
-                scroll_y = -(mov_y * 2 / config->scroll_scale);
+                scroll_y = -(mov_y * 3 / (config->scroll_scale * 2));
             } else {
                 // Larger movements: normal scaling
                 scroll_y = -(mov_y / config->scroll_scale);
@@ -549,12 +549,12 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
             int16_t abs_x = abs(mov_x);
             
             // Apply acceleration curve for better sensitivity on small movements
-            if (abs_x <= 2) {
+            if (abs_x <= 3) {
                 // Very small movements: minimum scroll of 1
                 scroll_x = (mov_x > 0) ? -1 : 1;
-            } else if (abs_x <= 5) {
+            } else if (abs_x <= 8) {
                 // Small movements: enhanced sensitivity
-                scroll_x = -(mov_x * 2 / config->scroll_scale);
+                scroll_x = -(mov_x * 3 / (config->scroll_scale * 2));
             } else {
                 // Larger movements: normal scaling
                 scroll_x = -(mov_x / config->scroll_scale);
