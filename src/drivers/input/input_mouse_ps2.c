@@ -460,8 +460,17 @@ void zmk_mouse_ps2_activity_process_cmd(zmk_mouse_ps2_packet_mode packet_mode, u
     }
 #endif
 
-    zmk_mouse_ps2_activity_move_mouse(packet.mov_x, packet.mov_y);
+    // Always process button events, even when there's no movement
     zmk_mouse_ps2_activity_click_buttons(packet.button_l, packet.button_m, packet.button_r);
+    
+    // Process movement if any (but ensure button events are processed first)
+    if (packet.mov_x != 0 || packet.mov_y != 0) {
+        zmk_mouse_ps2_activity_move_mouse(packet.mov_x, packet.mov_y);
+    }
+    
+    // Force button state update even if no movement (for debugging)
+    LOG_DBG("Packet processed - buttons: L:%d M:%d R:%d, movement: X:%d Y:%d", 
+            packet.button_l, packet.button_m, packet.button_r, packet.mov_x, packet.mov_y);
 
     data->prev_packet = packet;
 }
@@ -618,6 +627,8 @@ void zmk_mouse_ps2_activity_scroll_horizontal(int8_t scroll_x) {
 void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool button_r) {
     struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
     const struct zmk_mouse_ps2_config *config = &zmk_mouse_ps2_config;
+    
+    LOG_DBG("Processing buttons - L:%d M:%d R:%d", button_l, button_m, button_r);
 
     // TODO: Integrate this with the proper button mask instead
     // of hardcoding the mouse button indeces.
@@ -629,6 +640,9 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
     // First we check which mouse button press states have changed
     bool button_l_pressed = false;
     bool button_l_released = false;
+    
+    LOG_DBG("Button state check - button_l: %d, button_l_is_held: %d", button_l, data->button_l_is_held);
+    
     if (button_l == true && data->button_l_is_held == false) {
         LOG_INF("Pressed button_l");
 
@@ -657,6 +671,9 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
 
     bool button_r_released = false;
     bool button_r_pressed = false;
+    
+    LOG_DBG("Button state check - button_r: %d, button_r_is_held: %d", button_r, data->button_r_is_held);
+    
     if (button_r == true && data->button_r_is_held == false) {
         LOG_INF("Pressing button_r");
 
@@ -679,6 +696,8 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
         zmk_mouse_ps2_activity_abort_cmd("Multiple button presses");
         return;
     }
+    
+    LOG_DBG("Button changes detected - pressed: %d, released: %d", buttons_pressed, buttons_released);
 
     if (config->disable_clicking != true) {
         // If it wasn't, we actually send the events.
