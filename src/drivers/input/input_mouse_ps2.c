@@ -216,6 +216,11 @@ struct zmk_mouse_ps2_data {
     uint8_t tp_neg_inertia;
     uint8_t tp_value6;
     uint8_t tp_pts_threshold;
+    
+    // Scroll throttling variables
+    int32_t scroll_accumulator_x;
+    int32_t scroll_accumulator_y;
+    int32_t scroll_threshold;
 };
 
 static const struct zmk_mouse_ps2_config zmk_mouse_ps2_config = {
@@ -282,6 +287,11 @@ static struct zmk_mouse_ps2_data zmk_mouse_ps2_data = {
     .tp_neg_inertia = MOUSE_PS2_CMD_TP_SET_NEG_INERTIA_DEFAULT,
     .tp_value6 = MOUSE_PS2_CMD_TP_SET_VALUE6_UPPER_PLATEAU_SPEED_DEFAULT,
     .tp_pts_threshold = MOUSE_PS2_CMD_TP_SET_PTS_THRESHOLD_DEFAULT,
+    
+    // Initialize scroll throttling
+    .scroll_accumulator_x = 0,
+    .scroll_accumulator_y = 0,
+    .scroll_threshold = 8,
 };
 
 static int allowed_sampling_rates[] = {
@@ -523,44 +533,50 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
     if (data->button_m_is_held) {
         const struct zmk_mouse_ps2_config *config = &zmk_mouse_ps2_config;
         
-        // Convert Y movement to vertical scroll with acceleration
+        // Convert Y movement to vertical scroll with throttling
         if (have_y) {
-            int8_t scroll_y = 0;
             int16_t abs_y = abs(mov_y);
             
-            // Apply acceleration curve for better sensitivity on small movements
+            // For very small movements, accumulate and only send scroll when threshold is reached
             if (abs_y <= 10) {
-                // Very small movements: minimum scroll of 1
-                scroll_y = (mov_y > 0) ? -0.3 : 0.3;
-            } else if (abs_y <= 20) {
-                // Small movements: enhanced sensitivity
-                scroll_y = -(mov_y / (config->scroll_scale * 2));
+                // Accumulate small movements
+                data->scroll_accumulator_y += mov_y;
+                
+                // Only send scroll when accumulated movement reaches threshold
+                if (abs(data->scroll_accumulator_y) >= 8) {
+                    int8_t scroll_y = (data->scroll_accumulator_y > 0) ? -1 : 1;
+                    zmk_mouse_ps2_activity_scroll(scroll_y);
+                    data->scroll_accumulator_y = 0; // Reset accumulator
+                }
             } else {
-                // Larger movements: normal scaling
-                scroll_y = -(mov_y / (config->scroll_scale * 2));
+                // For larger movements, send scroll immediately
+                int8_t scroll_y = -(mov_y / (config->scroll_scale * 4));
+                zmk_mouse_ps2_activity_scroll(scroll_y);
+                data->scroll_accumulator_y = 0; // Reset accumulator
             }
-            
-            zmk_mouse_ps2_activity_scroll(scroll_y);
         }
         
-        // Convert X movement to horizontal scroll with acceleration
+        // Convert X movement to horizontal scroll with throttling
         if (have_x) {
-            int8_t scroll_x = 0;
             int16_t abs_x = abs(mov_x);
             
-            // Apply acceleration curve for better sensitivity on small movements
+            // For very small movements, accumulate and only send scroll when threshold is reached
             if (abs_x <= 10) {
-                // Very small movements: minimum scroll of 1
-                scroll_x = (mov_x > 0) ? -1 : 1;
-            } else if (abs_x <= 20) {
-                // Small movements: enhanced sensitivity
-                scroll_x = -(mov_x / (config->scroll_scale * 2));
+                // Accumulate small movements
+                data->scroll_accumulator_x += mov_x;
+                
+                // Only send scroll when accumulated movement reaches threshold
+                if (abs(data->scroll_accumulator_x) >= 8) {
+                    int8_t scroll_x = (data->scroll_accumulator_x > 0) ? -1 : 1;
+                    zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
+                    data->scroll_accumulator_x = 0; // Reset accumulator
+                }
             } else {
-                // Larger movements: normal scaling
-                scroll_x = -(mov_x / (config->scroll_scale * 2));
+                // For larger movements, send scroll immediately
+                int8_t scroll_x = -(mov_x / (config->scroll_scale * 4));
+                zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
+                data->scroll_accumulator_x = 0; // Reset accumulator
             }
-            
-            zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
         }
         
         return;
