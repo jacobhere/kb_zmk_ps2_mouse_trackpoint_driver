@@ -645,12 +645,12 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
             // Left button
             if (button_l_pressed) {
 
-                input_report_key(data->dev, INPUT_BTN_0, 1,
+                input_report_key(data->dev, INPUT_BTN_1, 1,
                                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
                 data->button_l_is_held = true;
             } else if (button_l_released) {
 
-                input_report_key(data->dev, INPUT_BTN_0, 0,
+                input_report_key(data->dev, INPUT_BTN_1, 0,
                                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
                 data->button_l_is_held = false;
             }
@@ -660,13 +660,13 @@ void zmk_mouse_ps2_activity_click_buttons(bool button_l, bool button_m, bool but
             // Right button
             if (button_r_pressed) {
 
-                input_report_key(data->dev, INPUT_BTN_1, 1,
+                input_report_key(data->dev, INPUT_BTN_0, 1,
                                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
                 data->button_r_is_held = true;
                 LOG_INF("Pressed button_r 1");
             } else if (button_r_released) {
 
-                input_report_key(data->dev, INPUT_BTN_1, 0,
+                input_report_key(data->dev, INPUT_BTN_0, 0,
                                  buttons_need_reporting == 1 ? true : false, K_FOREVER);
                 data->button_r_is_held = false;
                 LOG_INF("Released button_r 2");
