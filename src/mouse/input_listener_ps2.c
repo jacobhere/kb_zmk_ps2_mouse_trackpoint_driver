@@ -281,7 +281,7 @@ void zmk_input_listener_ps2_layer_toggle_activate_layer(struct k_work *item) {
 
 #else
 
-        zmk_keymap_layer_activate(config->layer_toggle, false);
+        zmk_keymap_layer_activate(config->layer_toggle);
 
 #endif /* IS_ENABLED(CONFIG_ZMK_INPUT_MOUSE_PS2_ENABLE_UROB_COMPAT) */
 
