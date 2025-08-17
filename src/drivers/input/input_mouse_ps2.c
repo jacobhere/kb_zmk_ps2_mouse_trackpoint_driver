@@ -586,26 +586,35 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
     }
 
     // Normal mouse movement when middle button is not held
-    if (have_x || have_y) {
-        zmk_hid_mouse_movement_set(mov_x, mov_y);
-        zmk_endpoints_send_mouse_report();
-        zmk_hid_mouse_movement_set(0, 0); // Reset movement
+    if (have_x) {
+        ret = input_report_rel(data->dev, INPUT_REL_X, mov_x, !have_y, K_NO_WAIT);
+    }
+    if (have_y) {
+        ret = input_report_rel(data->dev, INPUT_REL_Y, mov_y, true, K_NO_WAIT);
     }
 }
 
 void zmk_mouse_ps2_activity_scroll(int8_t scroll_y) {
+    struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
+    int ret = 0;
+
     if (scroll_y != 0) {
-        zmk_hid_mouse_scroll_set(0, scroll_y);
-        zmk_endpoints_send_mouse_report();
-        zmk_hid_mouse_scroll_set(0, 0); // Reset scroll
+        ret = input_report_rel(data->dev, INPUT_REL_WHEEL, scroll_y, true, K_NO_WAIT);
+        if (ret) {
+            LOG_ERR("Failed to report scroll: %d", ret);
+        }
     }
 }
 
 void zmk_mouse_ps2_activity_scroll_horizontal(int8_t scroll_x) {
+    struct zmk_mouse_ps2_data *data = &zmk_mouse_ps2_data;
+    int ret = 0;
+
     if (scroll_x != 0) {
-        zmk_hid_mouse_scroll_set(scroll_x, 0);
-        zmk_endpoints_send_mouse_report();
-        zmk_hid_mouse_scroll_set(0, 0); // Reset scroll
+        ret = input_report_rel(data->dev, INPUT_REL_HWHEEL, scroll_x, true, K_NO_WAIT);
+        if (ret) {
+            LOG_ERR("Failed to report horizontal scroll: %d", ret);
+        }
     }
 }
 
