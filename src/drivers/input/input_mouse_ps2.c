@@ -554,6 +554,14 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
             } else {
                 // For larger movements, send scroll immediately with reduced speed
                 int8_t scroll_y = -(mov_y / (config->scroll_scale * 8)); // Doubled divisor for slower scrolling
+                
+                // Ensure minimum scroll amount and cap maximum speed
+                if (abs(scroll_y) < 1) {
+                    scroll_y = (mov_y > 0) ? -1 : 1; // Minimum 1 scroll unit
+                } else if (abs(scroll_y) > 3) {
+                    scroll_y = (mov_y > 0) ? -3 : 3; // Cap at 3 scroll units
+                }
+                
                 zmk_mouse_ps2_activity_scroll(scroll_y);
                 data->scroll_accumulator_y = 0; // Reset accumulator
             }
@@ -577,6 +585,14 @@ void zmk_mouse_ps2_activity_move_mouse(int16_t mov_x, int16_t mov_y) {
             } else {
                 // For larger movements, send scroll immediately with reduced speed
                 int8_t scroll_x = -(mov_x / (config->scroll_scale * 8)); // Doubled divisor for slower scrolling
+                
+                // Ensure minimum scroll amount and cap maximum speed
+                if (abs(scroll_x) < 1) {
+                    scroll_x = (mov_x > 0) ? -1 : 1; // Minimum 1 scroll unit
+                } else if (abs(scroll_x) > 3) {
+                    scroll_x = (mov_x > 0) ? -3 : 3; // Cap at 3 scroll units
+                }
+                
                 zmk_mouse_ps2_activity_scroll_horizontal(scroll_x);
                 data->scroll_accumulator_x = 0; // Reset accumulator
             }
