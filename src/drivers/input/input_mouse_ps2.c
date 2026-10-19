@@ -1876,11 +1876,11 @@ int zmk_mouse_ps2_init_power_on_reset() {
         data->rst_gpio.dt_flags = 0;
     }
 
-    //  Set reset pin low...
+    // TrackPoint RESET is active high.
     int err = gpio_pin_configure_dt(&data->rst_gpio, (GPIO_OUTPUT_HIGH));
     if (err) {
         LOG_ERR("Failed Power-On-Reset: Failed to configure RST GPIO pin to "
-                "output low (err %d)",
+                "output high (err %d)",
                 err);
         return err;
     }
@@ -1888,7 +1888,17 @@ int zmk_mouse_ps2_init_power_on_reset() {
     // Wait 600ms
     k_sleep(MOUSE_PS2_POWER_ON_RESET_TIME);
 
-    // Set pin high
+    /* UART may already have queued the power-on AA/00 before this reset.
+     * Discard it while RESET is asserted, so initialization waits for the
+     * new self-test rather than sending commands to a device still resetting.
+     */
+    err = ps2_disable_callback(config->ps2_device);
+    if (err) {
+        LOG_ERR("Failed to clear pre-reset PS/2 data: %d", err);
+        return err;
+    }
+
+    // Release reset; the next self-test belongs to this reset.
     err = gpio_pin_set_dt(&data->rst_gpio, 0);
     if (err) {
         LOG_ERR("Failed Power-On-Reset: Failed to set RST GPIO pin to "
